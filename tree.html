@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Vue Tree</title>
+	<link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+	<script src="https://cdn.bootcss.com/vue/2.4.4/vue.js"></script>
+	<style>
+		div>div{
+			margin-left: 18px;
+			line-height: 180%;
+		}
+		.operate a{
+			font-size: 10px;
+			text-decoration: none !important;
+			margin-right: 2px;
+		}
+	</style>
+</head>
+<body>
+	<div id="app" class="container">
+		<trees v-for="row in node" :node="row" :key="row.id"></trees>
+	</div>
+	<template id="trees">
+		<div>
+			<p>
+				<input type="checkbox" :value="node.id" @click="selectNode(node)" v-model="$root.selectId">
+				<span v-if="!isEdit">&nbsp;{{ node.name }}</span>
+				<input type="text" v-model="node.name" v-if="isEdit" @blur="updateNode">
+				<span class="operate">
+					<a class="glyphicon glyphicon-plus text-success" href="javascript:;" @click="createNode"></a>
+					<a class="glyphicon glyphicon-edit text-primary" href="javascript:;" @click="editNode(node)"></a>
+					<a class="glyphicon glyphicon-trash text-danger" href="javascript:;" @click="removeNode(node)"></a>
+				</span>
+			</p>
+			<trees v-if="node.child.length > 0" v-for="li in node.child" :node="li" :key="li.id"></trees>
+		</div>
+	</template>
+	<script>
+		const Trees = Vue.extend({
+			name: 'trees',   // 使用标签时候的名字
+			template: '#trees',  //模板，我这里使用 template 实现，tree 是 template 的 id
+			props: ['node'],  // 组件之间传递的值, child 节点信息
+			data: function() {
+				return {
+					name: '',
+					isEdit: false
+				}
+			},
+			methods: {
+				createNode: function() {
+					this.node.child.push({
+						id: this.$root.kId++,
+						name: 'new',
+						child: []
+					});
+				},
+				editNode: function(node) {
+					this.isEdit = true;
+				},
+				updateNode: function(node) {
+					this.isEdit = false;
+				},
+				removeNode: function(node) {
+					if (this.$parent == this.$root) {
+						var child = this.$root.node;
+					} else {
+						(this.$parent.node.child !== undefined)  && (child = this.$parent.node.child);
+					}
+					if (child !== undefined) {
+						var _this = this;
+						child.forEach(function (item, index) {
+							if (item.id == node.id) {
+								_this.removeChild(item);
+								child.splice(index, 1);
+								_this.$root.selectId.splice(_this.$root.selectId.indexOf(node.id), 1);
+				 			}
+						});
+					}	
+				},
+				removeChild: function(node) {
+					this.$root.selectId.splice(this.$root.selectId.indexOf(node.id), 1);
+					if (node.child !== undefined && node.child.length > 0) {
+						var child = node.child;
+						var len = child.length;
+						for(var i = 0; i < len; i ++) {
+							this.$root.selectId.splice(this.$root.selectId.indexOf(child[i].id), 1);
+							this.removeChild(child[i]);
+						}
+					}
+				},
+				selectNode: function(node) {
+					if (this.$root.selectId.includes(node.id)) {
+						this.selectedChild(node);
+						this.$parent.node !== undefined && this.selectedParent(this.$parent);
+					} else {
+						this.cancelChild(node);
+						this.$parent.node !== undefined && this.cancelParent(this.$parent);
+					}
+				},
+				selectedChild: function(node) {
+					if (node.child !== undefined && node.child.length > 0) {
+						var child = node.child;
+						var len = child.length;
+						for(var i = 0; i < len; i ++) {
+							!this.$root.selectId.includes(child[i].id) && this.$root.selectId.push(child[i].id);
+							this.selectedChild(child[i]);
+						}
+					}
+				},
+				selectedParent: function(parent) {
+					var node = parent.node;
+					!this.$root.selectId.includes(node.id) && this.$root.selectId.push(node.id);
+					parent != this.$root && parent.$parent.node !== undefined && this.selectedParent(parent.$parent);
+				},
+				cancelChild: function(node) {
+					if (node.child !== undefined && node.child.length > 0) {
+						var child = node.child;
+						var len = child.length;
+						for(var i = 0; i < len; i ++) {
+							this.$root.selectId.splice(this.$root.selectId.indexOf(child[i].id), 1);
+							this.cancelChild(child[i]);
+						}
+					}
+				},
+				cancelParent: function(parent) {
+					var node = parent.node;
+					if (node.child !== undefined && node.child.length > 0) {
+						var child = node.child;
+						var len = child.length;
+						var sum = 0;
+						for(var i = 0; i < len; i ++) {
+							!this.$root.selectId.includes(child[i].id) && (sum = sum + 1);
+						}
+						if (sum == len) {
+							this.$root.selectId.includes(node.id) && this.$root.selectId.splice(this.$root.selectId.indexOf(node.id), 1);
+						}
+						parent.$parent.node !== undefined && this.cancelParent(parent.$parent);
+					}
+				}
+			}
+		});
+		const vm = new Vue({
+			el: '#app',
+			data: {
+				kId: 2,
+				selectId: [],
+				node: [
+					{ id: 1, name: 'root', child: [] }
+				]
+			},
+			components: {
+				Trees
+			}
+		});
+	</script>
+</body>
+</html>
