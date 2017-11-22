@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>TODO List</title>
+	<link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+	<script src="https://cdn.bootcss.com/vue/2.4.4/vue.js"></script>
+	<style>
+		.main{
+			width: 600px;
+			margin:  0 auto;
+		}
+	</style>
+</head>
+<body>
+	<div id="app" class="main">
+		<h3 class="text-center">TODO list</h3>
+		<input type="text" class="form-control" v-model="name" @keyup.enter="createTodo()">
+		
+		<br />
+		<ul class="list-group">
+			<li class="list-group-item" v-for="row in lists"  :class="{'disabled': row.checked}">
+				{{ row.name }}
+				<span class="pull-right">
+					<a class="glyphicon glyphicon-edit text-primary" href="javascript:;" @click="editTodo(row)"></a>
+					<a class="glyphicon glyphicon-trash text-danger" href="javascript:;" @click="removeTodo(row)"></a>&nbsp;&nbsp;
+					<input type="checkbox" class="pull-right" :value="row.id" v-model="row.checked" @click="!row.checked" />
+				</span>
+			</li>
+		</ul>
+	</div>
+	<script>
+		const vm = new Vue({
+			el: '#app',
+			data: {
+				k: 1,
+				checkedId: [],
+				name: '',
+				lists: []
+			},
+			methods: {
+				createTodo: function() {
+					this.lists.push({
+						id: this.k,
+						name: this.name,
+						checked: false
+					});
+					this.k = this.k + 1;
+					this.name = '';
+				},
+				editTodo: function(todo) {
+
+				},
+				removeTodo: function(todo) {
+					
+				}
+			}
+		});
+	</script>
+</body>
+</html>
