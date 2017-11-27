@@ -3,7 +3,7 @@
 作为一个伪前端，学习 `Vue` 自己写的一些练手小例子，做下记录。
 
 ## TODO list
-简单 `TODO List` 实现。掌握表单绑定，class 绑定，事件绑定。
+简单 `TODO List` 实现。掌握表单绑定，class 绑定，事件绑定，自定义指令 `focus`。
 [代码地址](http://htmlpreview.github.io/?https://github.com/Flyerboy/vue-demo/blob/master/todo.html)
 
 ## 树结构
