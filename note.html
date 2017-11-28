@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Vue NoteBook</title>
+	<link href="https://cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" rel="stylesheet">
+	<script src="https://cdn.bootcss.com/vue/2.4.4/vue.js"></script>
+	<script src="https://cdn.bootcss.com/marked/0.3.6/marked.min.js"></script>
+	<script src="https://cdn.bootcss.com/highlight.js/9.12.0/highlight.min.js"></script>
+	<link href="https://cdn.bootcss.com/highlight.js/9.12.0/styles/solarized-dark.min.css" rel="stylesheet">
+	<style>
+		*{
+			border-radius: 0 !important;
+		}
+		body{
+			background-color: #eeeeee;
+		}
+		.bg-white{
+			background-color: #ffffff;
+		}
+		.main{
+			margin: 30px;
+			padding-bottom: 15px;
+		}
+		.workzone{
+			border: 1px solid #dddddd !important;
+			height: 450px !important;
+			resize: none;
+		}
+		.title{
+			border: 0;
+			border-bottom: 1px solid #dddddd;
+		}
+		.name{
+			margin-bottom: 20px;
+		}
+		.menu{
+			padding: 0;
+		}
+		.menu li{
+			width: 50%;
+			margin-left: 0 !important;
+			text-align: center;
+		}
+		.menuzone{
+			padding: 0;
+			margin-right: 0;
+			height: 500px;
+		}
+		.menuzone ul{
+			margin-bottom: 0;
+			padding-right: 0;
+		}
+		.preview{
+			padding: 15px;
+			height: 500px;
+			overflow-y: auto;
+		}
+		.preview pre{
+			background-color: #002b36;
+		}
+		.operate{
+			background-color: #156673;
+			height: 500px;
+			padding-top: 30px;
+		}
+		.operate span{
+			font-size: 24px;
+			font-weight: bold;
+			cursor: pointer;
+			margin-bottom: 20px;
+		}
+	</style>
+</head>
+<body>
+	<div id="app" class="main container-fluid">
+		
+		<div class="row">
+			<menuzone :notes="notes"></menuzone>
+			<workzone></workzone>
+			<preview></preview>
+		</div>
+	</div>
+	<template id="menuzone">
+		<div class="">
+			<div class="col-md-2 bg-white menuzone">
+				<div class="operate col-md-2 text-center">
+					<p><span class="glyphicon glyphicon-plus" @click="createNote"></span></p>
+					<p><span class="glyphicon glyphicon-star" :class="{'text-danger':$root.curNote.isCollect}" @click="setCollect"></span></p>
+					<p><span class="glyphicon glyphicon-remove" @click="removeNote"></span></p>
+				</div>
+				<div class="col-md-10 text-center">
+					<h3 class="text-center name">NoteBook</h3>
+					<ul class="nav nav-pills">
+					  <li :class="{active:active == 'all'}"><a href="javascript:;" @click="showAll()">全部({{ notes.length }})</a></li>
+					  <li :class="{active:active == 'collections'}"><a href="javascript:;" @click="showCollections()">收藏({{ collections.length }})</a></li>
+					</ul>
+					<br />
+					<ul class="list-group">
+						<li class="list-group-item" 
+							v-for="row in showNotes"
+							:key="row.title"
+							:class="{active: row.isActive}"
+							@click="editNote(row)"
+						>{{ row.title }}</li>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</template>
+	<template id="workzone">
+		<div class="col-md-5">
+			<input type="text" class="form-control title" v-model="$root.curNote.title" />
+			<br />
+			<textarea class="form-control workzone" 
+				v-model="$root.curNote.content"
+				id="content"
+				@keydown="setContent($event)"
+			></textarea>
+		</div>
+	</template>
+	<template id="preview">
+		<div class="col-md-5 bg-white preview" v-html="$root.curNote.previewContent"></div>
+	</template>
+	<script>
+		const api = {
+			getNotes: function() {
+				return JSON.parse(localStorage.getItem('notes')) || [];
+			},
+			saveNotes: function(data) {
+				localStorage.setItem('notes', JSON.stringify(data));
+			}
+		};
+		const menuzone = Vue.extend({
+			name: 'menuzone',
+			props: ['notes'],
+			template: '#menuzone',
+			data: function() {
+				return {
+					showNotes: [],
+					active: 'all'
+				};
+			},
+			computed: {
+				collections: function() {
+					var data = [];
+					this.notes.forEach(function(item) {
+						if (item.isCollect) {
+							data.push(item);
+						}
+					});
+					return data;
+				}
+			},
+			created: function() {
+				this.showNotes = this.notes;
+			},
+			methods: {
+				createNote: function() {
+					this.showAll();
+					this.clearActive();
+					var note = {
+						title: 'New',
+						content: '',
+						isActive: true,
+						isCollect: false,
+						createdAt: new Date().getTime()
+					};
+					this.notes.unshift(note);
+				},
+				editNote: function(note) {
+					this.clearActive();
+					note.isActive = true;
+					this.$root.curNote.title = note.title;
+					this.$root.curNote.content = note.content;
+				},
+				removeNote: function() {
+					var _this = this;
+					this.notes.forEach(function(item, index) {
+						if (item.title == _this.$root.curNote.title) {
+							_this.notes.splice(index, 1);
+							_this.$root.curNote.title = _this.notes[0].title || '';
+							_this.$root.curNote.content = _this.notes[0].content || '';
+							_this.notes[0] ? _this.notes[0].isActive = true : '';
+							return;
+						}
+					});
+				},
+				clearActive: function() {
+					var _this = this;
+					this.notes.forEach(function(item, index) {
+						_this.notes[index].isActive = false;
+					});
+				},
+				setCollect: function() {
+					this.$root.curNote.isCollect = !this.$root.curNote.isCollect;
+				},
+				showAll: function () {
+					this.active = 'all';
+					this.showNotes = this.notes;
+				},
+				showCollections: function () {
+					this.active = 'collections';
+					this.showNotes = this.collections;
+				}
+			}
+		});
+		const workzone = Vue.extend({
+			name: 'workzone',
+			template: '#workzone',
+			methods: {
+				setContent: function(event) {
+					if (event.keyCode == 9) {
+						event.preventDefault();
+						var textarea = document.querySelector('#content');
+						var start = textarea.selectionStart;
+				        var end = textarea.selectionEnd;
+				        this.$root.curNote.content = textarea.value =  this.$root.curNote.content.substring(0, start)
+				                    + "\t"
+				                    + this.$root.curNote.content.substring(end);
+				        textarea.selectionStart = textarea.selectionEnd = start + 1;
+				        textarea.focus();
+					}
+				}
+			}
+		});
+		const preview = Vue.extend({
+			name: 'preview',
+			template: '#preview'
+		});
+		const vm = new Vue({
+			el: '#app',
+			data: {
+				notes: []
+			},
+			created: function() {
+				this.notes = api.getNotes();
+			},
+			computed: {
+				curNote: function() {
+					var res;
+					this.notes.forEach(function(item) {
+						if (item.isActive) {
+							res = item;
+						}
+					});
+					if (!res) {
+						res = {
+							title: '',
+							content: '',
+							isActive: false
+						};
+					}
+					res.previewContent = marked(res.content);
+					return res;
+				}
+			},
+			watch: {
+				'curNote.content': function(val) {
+					this.curNote.previewContent = marked(val);
+					this.$nextTick(function() {
+						[].forEach.call(document.querySelectorAll('pre code'), hljs.highlightBlock);
+					});
+				},
+				'notes': { 
+					handler: function(val, oldVal) {
+						api.saveNotes(val);
+					},
+					deep: true
+				}
+			},
+			components: {
+				menuzone,
+				workzone,
+				preview
+			}
+		});
+	</script>
+</body>
+</html>

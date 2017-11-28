@@ -17,7 +17,7 @@
 中间使用 `markdown` 来实现笔记的展示。
 [代码地址](http://htmlpreview.github.io/?https://github.com/Flyerboy/vue-demo/blob/master/note.html)
 
-这个例子主要使用了多个组件，`vue-router` 知识的使用。
+这个例子主要使用了多个组件，变量传递，`watch`，`computed` 等的使用。
 
 
 ## 购物车功能
